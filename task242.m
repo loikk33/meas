@@ -1,22 +1,23 @@
-clc; clear; close all;
-
-fs = 8000;              
-fres = 0.5;                
-N = fs / fres;            % Number of samples (8000)
+clc;clear;close all;
+fs = 10000;              
+fres = 1;                
+N = fs / fres;            % Number of samples
 K = 500;                % Exciting from 1Hz to 500Hz
 target_rms = 0.1;
 
+
+%% b) constantphase 
+
+% Frequency Domain Signal
 X = zeros(1, N);
 for k = 1:K             
-    phi_schroeder = (k .* (k + 1) * pi) / K;
-    val = (1 / 2) * exp(1i * phi_schroeder); 
-
-    X(k + 1) = val;            
-
-    %X(N - k + 1) = conj(val);
+    phi_const = k;
+    val = (1 / 2) * exp(1i * phi_const); 
+    
+    X(k + 1) = val;           
 end
 
-x = 2 * real(ifft(X, 'symmetric')); 
+x = 2 * real(ifft(X)); %samples
 
 current_rms = sqrt(mean(x.^2));
 x_final = x * (target_rms / current_rms);
@@ -48,9 +49,31 @@ ylabel('Phase (rad)');
 xlim([0 400]);
 grid on;
 
-save("signal4.mat", "x_final")
-Lab_2_and_3_check_exc('signal4.mat');
-[u,y] = ReadData('signal4_acq.mat',N , 10);
+
+%% random phase
+% Frequency Domain Signal
+X_rand = zeros(1, N);
+for k = 1:K              
+    rand_phi = rand * 2 * pi;
+    val1 = (1 / 2) * exp(1i * rand_phi); 
+    
+    X_rand(k + 1) = val1;            
+  
+end
+
+x_rand = 2 * real(ifft(X_rand)); %samples
+
+current_rms = sqrt(mean(x.^2));
+x_rand = x_rand * (target_rms / current_rms);
+
+fprintf('Final RMS Value: %.4f V\n', sqrt(mean(x_rand.^2)));
+
+save("signalrandom.mat", "x_rand")
+Lab_2_and_3_check_exc('signalrandom.mat');
+%save("signalconstant.mat", "x_final")
+Lab_2_and_3_check_exc('signalconstant.mat');
+
+[u,y] = ReadData('signalrandom_acq.mat',N , 10);
 U = fft(u);
 Y = fft(y);
 figure;
@@ -61,15 +84,3 @@ plot(db(H))
 hold on; 
 plot(db(H8))
 plot(db(H4))
-
-
-% 
-% % [l,c] = size(u);
-% figure; 
-% H = [];
-% hold on ; 
-% for ii = 1 : c
-%     H(ii) = y(:,ii) ./u(:, ii); 
-%     plot(H);
-% end
-
