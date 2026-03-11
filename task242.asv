@@ -1,0 +1,110 @@
+clc;clear;close all;
+fs = 10000;              
+fres = 1;                
+N = fs / fres;            % Number of samples
+K = 500;                % Exciting from 1Hz to 500Hz
+target_rms = 0.1;
+
+
+%% b) constantphase 
+
+% Frequency Domain Signal
+X = zeros(1, N);
+for k = 1:K             
+    phi_const = k;
+    val = (1 / 2) * exp(1i * phi_const); 
+    
+    X(k + 1) = val;           
+end
+
+x = 2 * real(ifft(X)); %samples
+
+current_rms = sqrt(mean(x.^2));
+x_final = x * (target_rms / current_rms);
+
+fprintf('Final RMS Value: %.4f V\n', sqrt(mean(x_final.^2)));
+
+figure('Color', 'w');
+subplot(3,1,1);
+plot((0:N-1)/fs, x_final);
+title('Schroeder Multisine');
+xlabel('Time (s)'); ylabel('Voltage (V)');
+grid on;
+
+subplot(3,1,2);
+f_axis = (0:N/2) * fres;
+X_mag = abs(fft(x_final));
+stem(f_axis, X_mag(1:length(f_axis)), 'Marker', 'none');
+title('Magnitude Spectrum');
+xlabel('Frequency (Hz)'); ylabel('Magnitude');
+grid on;
+
+% Frequency Domain Phase (Bin Number)
+subplot(3,1,3);
+phase = angle(fft(x_final));
+stem(0:N-1, phase, 'Marker', 'none');
+title('Schroeder phase DFT Phase');
+xlabel('Frequency (bin)');
+ylabel('Phase (rad)');
+xlim([0 400]);
+grid on;
+
+
+%% random phase
+% Frequency Domain Signal
+X_rand = zeros(1, N);
+for k = 1:K              
+    rand_phi = rand * 2 * pi;
+    val1 = (1 / 2) * exp(1i * rand_phi); 
+    
+    X_rand(k + 1) = val1;            
+  
+end
+
+x_rand = 2 * real(ifft(X_rand)); %samples
+
+current_rms = sqrt(mean(x.^2));
+x_rand = x_rand * (target_rms / current_rms);
+
+fprintf('Final RMS Value: %.4f V\n', sqrt(mean(x_rand.^2)));
+
+
+%% Aperiodic
+x_noise = randn(1, N);
+
+current_rms = rms(x_noise);
+
+x_apper = x_noise * (target_rms / current_rms);
+
+save("signalaperiodic.mat", "x_apper")
+Lab_2_and_3_check_exc('signalaperiodic.mat');
+%save("signalrandom.mat", "x_rand")
+%Lab_2_and_3_check_exc('signalrandom.mat');
+%save("signalconstant.mat", "x_final")
+%Lab_2_and_3_check_exc('signalconstant.mat');
+
+[u,y] = ReadData('signalapper3_nonoise_acq.mat',N , 1);
+Hann = hanning(N,'periodic');
+u_win = u.*Hann;
+y_win = y.*Hann;
+
+U_han = fft(u_win);
+Y_han = fft(y_win);
+U_rec = fft(u);
+Y_rec = fft(y);
+figure;
+H_han = Y_han./ U_han;
+H_rec = Y_rec./ U_rec;
+plot(db(H_rec))
+plot(db(H_han))
+
+
+
+
+ %H(:) = Y(:,1) ./U(:, 1);
+% H8(:) = Y(:,8) ./U(:, 8);
+% H4(:) = Y(:,4) ./U(:, 4);
+ % plot(db(H))
+ % hold on; 
+ % plot(db(H8))
+ % plot(db(H4))

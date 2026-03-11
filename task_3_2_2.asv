@@ -1,0 +1,124 @@
+clc; clear; close all;
+
+fs = 16000;   
+N1 = 4000;              % Samples per period
+df = fs / N1;          
+f_start = 4;            
+f_stop = 1000;          
+target_rms = 0.5;       % 500 mV
+M = 32;
+
+k_start = f_start / df; % Bin 1
+k_stop = f_stop / df;   % Bin 250
+k_idx = k_start:k_stop;
+K = length(k_idx);      
+
+phi_schroeder = ( (1:K) .* ((1:K) + 1) * pi ) / K;
+
+X = zeros(1, N1);
+for j = 1:K
+    k = k_idx(j);
+    val = exp(1i * phi_schroeder(j));
+    X(k + 1) = val; 
+end
+
+x = 2 * real(ifft(X, 'symmetric')); 
+
+x_final = x * (target_rms / std(x));
+
+fprintf('Frequency Resolution: %.1f Hz\n', df);
+fprintf('Crest Factor: %.4f\n', max(abs(x_final)) / std(x_final));
+
+figure('Color', 'w');
+t = (0:N1-1)/fs;
+
+subplot(2,1,1);
+plot(t, x_final);
+title('Schroeder Multisine');
+xlabel('Time (s)'); ylabel('Amplitude (V)');
+grid on;
+
+subplot(2,1,2);
+f_axis = (0:N1/2) * df;
+X_mag = abs(fft(x_final));
+stem(f_axis(1:k_stop+10), X_mag(1:k_stop+10), 'Marker', 'none');
+title('Magnitude Spectrum');
+xlabel('Frequency (Hz)'); ylabel('Magnitude');
+grid on;
+
+
+
+save("signalschr3.mat", "x_final")
+Lab_2_and_3_check_exc('signalschr3.mat');
+
+[u,y] = ReadData('signalschr3_nonoise_acq.mat',N1 , 40);
+u_multi = u(:,9:end);
+y_multi = y(:,9:end);
+
+%% averaging time 
+u_avrg = mean(u_multi,2);
+y_avrg = mean(y_multi,2);
+U_fft = fft(u_avrg);
+Y_fft = fft(y_avrg);
+H1 = Y_fft ./ U_fft;
+
+
+%% avrreging dft
+U_dft = fft(u_multi);
+Y_dft = fft(y_multi);
+U_avrg = mean(U_dft,2);
+Y_avrg = mean(Y_dft,2);
+H2 = Y_avrg ./ U_avrg;
+
+%% avereging FRF
+H_i = Y_dft ./ U_dft;
+H3 = mean(H_i,2);
+
+
+
+%% avereging autopower of input
+S_YU = mean (Y_dft .* conj(U_dft));
+S_UU = mean (U_dft .* conj(U_dft));
+H4 = S_YU ./ S_UU;
+
+
+
+
+%% avereging autopower of output
+S_YY = mean (Y_dft .* conj(Y_dft));
+S_UY = mean (U_dft .* conj(Y_dft));
+H5 = S_YY ./ S_UY;
+
+
+
+
+
+
+%%final plots
+
+% f = (0:N1 - 1)*(fs/N1);
+% plot(f,db(H1),'Color', 'y'); 
+% hold on;
+% plot(f,db(H2), 'Color', 'r'); 
+% plot(f,db(H3),'Color', 'b'); 
+% plot(f,db(H4),'Color','m'); 
+% plot(f,db(H5),'Color', 'k'); 
+
+f1 = (0:N1-1) * (fs/N1);
+
+f2 = (0:) * (fs/N1);
+
+
+plot(f, 20*log10(abs(H1)), 'y')
+hold on
+plot(f, 20*log10(abs(H2)), 'r')
+plot(f, 20*log10(abs(H3)), 'b')
+plot(f, 20*log10(abs(H4)), 'm')
+plot(f, 20*log10(abs(H5)), 'k')
+
+xlabel('Frequency (Hz)')
+ylabel('Magnitude (dB)')
+legend('H1','H2','H3','H4','H5')
+grid on
+
+

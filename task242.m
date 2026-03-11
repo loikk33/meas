@@ -68,19 +68,43 @@ x_rand = x_rand * (target_rms / current_rms);
 
 fprintf('Final RMS Value: %.4f V\n', sqrt(mean(x_rand.^2)));
 
-save("signalrandom.mat", "x_rand")
-Lab_2_and_3_check_exc('signalrandom.mat');
-%save("signalconstant.mat", "x_final")
-Lab_2_and_3_check_exc('signalconstant.mat');
 
-[u,y] = ReadData('signalrandom_acq.mat',N , 10);
-U = fft(u);
-Y = fft(y);
+%% Aperiodic
+x_noise = randn(1, N);
+
+current_rms = rms(x_noise);
+
+x_apper = x_noise * (target_rms / current_rms);
+
+save("signalaperiodic.mat", "x_apper")
+Lab_2_and_3_check_exc('signalaperiodic.mat');
+%save("signalrandom.mat", "x_rand")
+%Lab_2_and_3_check_exc('signalrandom.mat');
+%save("signalconstant.mat", "x_final")
+%Lab_2_and_3_check_exc('signalconstant.mat');
+
+%[u,y] = ReadData('signalapper3_nonoise_acq.mat',N , 1);
+Hann = hanning(N,'periodic');
+u_win = u.*Hann;
+y_win = y.*Hann;
+
+U_han = fft(u_win);
+Y_han = fft(y_win);
+U_rec = fft(u);
+Y_rec = fft(y);
 figure;
-H(:) = Y(:,1) ./U(:, 1);
-H8(:) = Y(:,8) ./U(:, 8);
-H4(:) = Y(:,4) ./U(:, 4);
-plot(db(H))
-hold on; 
-plot(db(H8))
-plot(db(H4))
+H_han = Y_han./ U_han;
+H_rec = Y_rec./ U_rec;
+plot(db(H_rec))
+plot(db(H_han))
+
+
+
+
+ %H(:) = Y(:,1) ./U(:, 1);
+% H8(:) = Y(:,8) ./U(:, 8);
+% H4(:) = Y(:,4) ./U(:, 4);
+ % plot(db(H))
+ % hold on; 
+ % plot(db(H8))
+ % plot(db(H4))
